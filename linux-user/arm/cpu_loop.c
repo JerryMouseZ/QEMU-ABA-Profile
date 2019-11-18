@@ -73,7 +73,7 @@
 
 //#define HASH_LLSC
 //#define LLSC_LOG
-#define PICO_ST
+//#define PICO_ST
 //#define PF_LLSC
 /* Commpage handling -- there is no commpage for AArch64 */
 
