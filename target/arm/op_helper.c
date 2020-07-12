@@ -1043,7 +1043,7 @@ void HELPER(pf_llsc_add)(CPUARMState *env, uint32_t addr, uint64_t node_addr)
 	target_ulong page_addr = addr & 0xfffff000;
 	x_monitor_set_exclusive_addr((void*)node_addr, addr);
 
-    fprintf(stderr, "[pf_llsc_add]\ttid:%d\tpage addr = %x, addr=%x\n", env->exclusive_tid, page_addr, *(uint32_t *)(node_addr + 4));
+    // fprintf(stderr, "[pf_llsc_add]\ttid:%d\tpage addr = %x, addr=%x\n", env->exclusive_tid, page_addr, *(uint32_t *)(node_addr + 4));
     target_mprotect(page_addr, 0x1000, PROT_READ);
     pthread_mutex_unlock(&g_sc_lock);
 }
@@ -1070,8 +1070,9 @@ uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv
     if (x_monitor_check_exclusive((void*)env->exclusive_node, addr) != 1) {
         fprintf(stderr, "[x_monitor_sc]\tthread %d strex fail! addr: %x\tcurval %x, cmpv %x, exclusive mark lost.\n", env->exclusive_tid, addr, curv, cmpv);
         pthread_mutex_unlock(&g_sc_lock);
-        return curv;
+        return cmpv + 1;
 	}
+    x_monitor_check_and_clean(env->exclusive_tid, addr);
     //x_monitor clean
     //(x_node*)(env->exclusive_node)->exclusive_addr = 0;
 
