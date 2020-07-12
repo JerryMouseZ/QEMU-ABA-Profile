@@ -97,7 +97,6 @@ void* x_monitor_register_thread(int tid)
 	fprintf(stderr, "[register_thread]\tregistering thread %d\n", tid);
 #endif
 
-
 	pthread_mutex_lock(&x_mon_mutex);
 	thread_count++;
 	if (thread_count == 1) {

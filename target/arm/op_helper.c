@@ -1066,27 +1066,21 @@ uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv
 		pthread_mutex_unlock(&g_sc_lock);
 		return curv;
 	}
-    x_monitor_check_and_clean(env->exclusive_tid, addr);
+    //x_monitor clean
+    env->exclusive_addr = 0;
 
     //map old page to new address
     void *pold, *pnew;
 	pold = (void*)TO_PAGE((uint64_t)haddr);
 	pnew = mmap(0, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-	if (((long)mremap(pold, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pnew)) == -1) {
-		perror("[x_monitor_sc]\tmremap");
-		exit(2);
-	}
-	
+    assert(((long)mremap(pold, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pnew)) != -1);
+
     //store value to new page
 	mprotect(pnew, PAGE_SIZE, PROT_READ | PROT_WRITE);
 	uint32_t ret = __sync_val_compare_and_swap(haddr - (uint32_t*)pold + (uint32_t*)pnew, cmpv, newv);
 
     //map new address returnn old
-	if ((mremap(pnew, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pold)) != pold) {
-		perror("[x_monitor_sc]\tmremap");
-		exit(2);
-	}
-
+	assert ((mremap(pnew, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pold)) == pold);
 	pthread_mutex_unlock(&g_sc_lock);
 	//fprintf(stderr, "[x_monitor_sc]\tcmpxchged! thread %d strex! retv %x\n", env->exclusive_tid, ret);
 	return ret;
