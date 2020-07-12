@@ -7577,8 +7577,6 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     TCGLabel *fail_label;
     TCGMemOp opc = size | MO_ALIGN | s->be_data;
 
-
-
     /* if (env->exclusive_addr == addr && env->exclusive_val == [addr]) {
          [addr] = {Rt};
          {Rd} = 0;
