@@ -1052,8 +1052,8 @@ void HELPER(pf_llsc_add)(CPUARMState *env, uint32_t addr, uint64_t node_addr)
 // Handle sc succeed condition through exclusive monitor.
 uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv, uint32_t newv)
 {
-	fprintf(stderr, "[x_monitor_sc]\thello! addr %x, cmpv %x, newv %x\n", 
-					addr, cmpv, newv);
+	fprintf(stderr, "[x_monitor_sc]\ttid:%d\thello! addr %x, cmpv %x, newv %x\n", 
+					env->exclusive_tid, addr, cmpv, newv);
 
 	uint32_t *haddr = (uint32_t*)g2h(addr);
 	uint32_t curv = *haddr;
