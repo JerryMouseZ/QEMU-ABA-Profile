@@ -1031,21 +1031,24 @@ void HELPER(print_aa32_addr)(uint32_t addr)
 extern int x_monitor_set_exclusive_addr(void* p_node, uint32_t addr);
 extern int target_mprotect(abi_ulong, abi_ulong, int);
 
-void HELPER(pf_llsc_add)(CPUARMState *env, uint32_t addr, uint64_t node_addr)
-{
-	target_ulong page_addr = addr & 0xfffff000;
-	x_monitor_set_exclusive_addr((void*)node_addr, addr);
-
-    fprintf(stderr, "[pf_llsc_add]\ttid:%d\tpage addr = %x, addr=%x\n", env->exclusive_tid, page_addr, *(uint32_t *)(node_addr + 4));
-    target_mprotect(page_addr, 0x1000, PROT_READ);
-}
-
-
 extern int x_monitor_check_exclusive(void* p_node, uint32_t addr);
 extern int x_monitor_check_and_clean(int tid, uint32_t addr);
 extern pthread_mutex_t g_sc_lock;
 #define TO_PAGE(x) (x >> 12 << 12)
 #define PAGE_SIZE 0x1000
+
+void HELPER(pf_llsc_add)(CPUARMState *env, uint32_t addr, uint64_t node_addr)
+{
+    pthread_mutex_lock(&g_sc_lock);
+	target_ulong page_addr = addr & 0xfffff000;
+	x_monitor_set_exclusive_addr((void*)node_addr, addr);
+
+    fprintf(stderr, "[pf_llsc_add]\ttid:%d\tpage addr = %x, addr=%x\n", env->exclusive_tid, page_addr, *(uint32_t *)(node_addr + 4));
+    target_mprotect(page_addr, 0x1000, PROT_READ);
+    pthread_mutex_unlock(&g_sc_lock);
+}
+
+
 // Handle sc succeed condition through exclusive monitor.
 uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv, uint32_t newv)
 {
@@ -1080,9 +1083,7 @@ uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv
 
     //store value to new page
 	mprotect(pnew, PAGE_SIZE, PROT_READ | PROT_WRITE);
-    uint32_t ret = cmpv;
-    *(uint32_t *)((void *)haddr - pold + pnew) = newv;
-    //uint32_t ret = __sync_val_compare_and_swap(haddr - (uint32_t *)pold + (uint32_t *)pnew, cmpv, newv);
+    uint32_t ret = __sync_val_compare_and_swap(haddr - (uint32_t *)pold + (uint32_t *)pnew, cmpv, newv);
 
     //map new address returnn old
 	assert ((mremap(pnew, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pold)) == pold);
