@@ -1030,12 +1030,14 @@ void HELPER(print_aa32_addr)(uint32_t addr)
 
 extern int x_monitor_set_exclusive_addr(void* p_node, uint32_t addr);
 extern int target_mprotect(abi_ulong, abi_ulong, int);
-void HELPER(pf_llsc_add)(uint32_t addr, uint64_t node_addr)
+
+void HELPER(pf_llsc_add)(CPUARMState *env, uint32_t addr, uint64_t node_addr)
 {
 	target_ulong page_addr = addr & 0xfffff000;
-    //fprintf(stderr, "[pf_llsc_add]\taddr = %x, node_addr = %lx\n", page_addr, node_addr);
 	x_monitor_set_exclusive_addr((void*)node_addr, addr);
-	target_mprotect(page_addr, 0x1000, PROT_READ);
+
+    fprintf(stderr, "[pf_llsc_add]\ttid:%d\tpage addr = %x, addr=%x\n", env->exclusive_tid, page_addr, *(uint32_t *)(node_addr + 4));
+    target_mprotect(page_addr, 0x1000, PROT_READ);
 }
 
 
@@ -1047,27 +1049,28 @@ extern pthread_mutex_t g_sc_lock;
 // Handle sc succeed condition through exclusive monitor.
 uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv, uint32_t newv)
 {
-	//fprintf(stderr, "[x_monitor_sc]\thello! addr %x, cmpv %x, newv %x\n", 
-	//				addr, cmpv, newv);
+	fprintf(stderr, "[x_monitor_sc]\thello! addr %x, cmpv %x, newv %x\n", 
+					addr, cmpv, newv);
 
 	uint32_t *haddr = (uint32_t*)g2h(addr);
 	uint32_t curv = *haddr;
 
 	//TODO: mov curv comparing to IR
 	if (curv != cmpv) {
-		return curv;
-	}
+        fprintf(stderr, "[x_monitor_sc]\tthread %d strex fail! addr: %x\tcurval %x, cmpv %x, exclusive mark lost.\n", env->exclusive_tid, addr, curv, cmpv);
+        return curv;
+    }
 
 	pthread_mutex_lock(&g_sc_lock);
-
+    
     //x_monitor check
     if (x_monitor_check_exclusive((void*)env->exclusive_node, addr) != 1) {
-		//fprintf(stderr, "[x_monitor_sc]\tthread %d strex fail! curval %x, cmpv %x, exclusive mark lost.\n", env->exclusive_tid, curv, cmpv);
-		pthread_mutex_unlock(&g_sc_lock);
-		return curv;
+        fprintf(stderr, "[x_monitor_sc]\tthread %d strex fail! addr: %x\tcurval %x, cmpv %x, exclusive mark lost.\n", env->exclusive_tid, addr, curv, cmpv);
+        pthread_mutex_unlock(&g_sc_lock);
+        return curv;
 	}
     //x_monitor clean
-    env->exclusive_addr = 0;
+    //(x_node*)(env->exclusive_node)->exclusive_addr = 0;
 
     //map old page to new address
     void *pold, *pnew;
@@ -1077,7 +1080,9 @@ uint32_t HELPER(x_monitor_sc)(CPUARMState *env, target_ulong addr, uint32_t cmpv
 
     //store value to new page
 	mprotect(pnew, PAGE_SIZE, PROT_READ | PROT_WRITE);
-	uint32_t ret = __sync_val_compare_and_swap(haddr - (uint32_t*)pold + (uint32_t*)pnew, cmpv, newv);
+    uint32_t ret = cmpv;
+    *(uint32_t *)((void *)haddr - pold + pnew) = newv;
+    //uint32_t ret = __sync_val_compare_and_swap(haddr - (uint32_t *)pold + (uint32_t *)pnew, cmpv, newv);
 
     //map new address returnn old
 	assert ((mremap(pnew, PAGE_SIZE, PAGE_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, pold)) == pold);

@@ -7491,25 +7491,9 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
     TCGMemOp opc = size | MO_ALIGN | s->be_data;
 	//tcg_gen_stex_count(addr);
 	//tcg_gen_ldex_count(addr);
-#ifdef HASH_LLSC
-    TCGv_i32 mask1 = tcg_const_i32(0x0fffffff);
-    TCGv_i32 mask2 = tcg_const_i32(0xa0000000);
-    TCGv_i32 hash_addr = tcg_temp_new_i32();
-#endif
-
     s->is_ldex = true;
-#ifdef HASH_LLSC
-    //tcg_gen_ldex_count(addr);
-    //hash method
-    tcg_gen_and_i32(hash_addr, addr, mask1);
-    tcg_gen_or_i32(hash_addr, hash_addr, mask2);
-    gen_aa32_st32(s, cpu_exclusive_tid, hash_addr, get_mem_index(s));
-    tcg_temp_free(mask1);
-    tcg_temp_free(mask2);
-    tcg_temp_free(hash_addr);
-#endif
 #ifdef PF_LLSC
-	tcg_gen_pf_llsc_add(addr, cpu_exclusive_node);
+	gen_helper_pf_llsc_add(cpu_env, addr, cpu_exclusive_node);
 #endif
 
     if (size == 3) {

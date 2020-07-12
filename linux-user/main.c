@@ -195,7 +195,9 @@ int x_monitor_set_exclusive_addr(void* p_node, uint32_t addr)
 int x_monitor_check_exclusive(void* p_node, uint32_t addr)
 {
 	x_node *p = (x_node*)p_node;
-	return (p->exclusive_addr == addr);
+    int ret = (int)(p->exclusive_addr == addr);
+    p->exclusive_addr = 0;
+	return ret;
 }
 
 int x_monitor_check_and_clean(int tid, uint32_t addr)
