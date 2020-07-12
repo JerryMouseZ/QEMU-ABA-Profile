@@ -665,14 +665,15 @@ static int pf_llsc_segfault_handler(int host_signum, siginfo_t *pinfo, void *puc
     int is_write = ((uc->uc_mcontext.gregs[REG_ERR] & 0x2) != 0);
 	
 	//assert(is_write == 1);
-		CPUArchState *env = thread_cpu->env_ptr;
-    	CPUState *cpu = env_cpu(env);
-		fprintf(stderr, "[pf_llsc_segfault_handler]\tthread %d tguest addr is %p, host_addr is %p, perm %d, guest pc %x\n", ((CPUARMState*)env)->exclusive_tid, (void *)guest_addr, (void*)host_addr, is_write+1, ((CPUARMState*)env)->regs[15]);
-	if (is_write) {
-		x_monitor_check_and_clean(((CPUARMState*)cpu)->exclusive_tid, guest_addr);
+    CPUArchState *env = thread_cpu->env_ptr;
+    CPUState *cpu = env_cpu(env);
+    fprintf(stderr, "[pf_llsc_segfault_handler]\tthread %d tguest addr is %p, host_addr is %p, perm %d, guest pc %x\n", ((CPUARMState *)env)->exclusive_tid, (void *)guest_addr, (void *)host_addr, is_write + 1, ((CPUARMState *)env)->regs[15]);
+    if (is_write)
+    {
+        x_monitor_check_and_clean(((CPUARMState*)cpu)->exclusive_tid, guest_addr);
 		target_mprotect(page_addr, 0x1000, PROT_READ | PROT_WRITE);
-	}
-	pthread_mutex_unlock(&g_sc_lock);
+    }
+    pthread_mutex_unlock(&g_sc_lock);
     return 0;
 }
 #endif
