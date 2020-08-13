@@ -26,6 +26,8 @@
 extern void __gcov_dump(void);
 #endif
 
+extern double exclusive_time;
+extern double mprotect_time;
 extern long long llsc_single, llsc_multi;
 void preexit_cleanup(CPUArchState *env, int code)
 {
@@ -35,6 +37,8 @@ void preexit_cleanup(CPUArchState *env, int code)
 #ifdef CONFIG_GCOV
         __gcov_dump();
 #endif
-		fprintf(stderr, "[x_mon]\tllsc_single=%lld, llsc_multi=%lld\n", llsc_single, llsc_multi);
+        fprintf(stderr, "sc exclusive time %lf s\n", exclusive_time / 1000000);
+        fprintf(stderr, "mprotect_time : %lf s\n\n", mprotect_time / 1000000);
+        fprintf(stderr, "[x_mon]\tllsc_single=%lld, llsc_multi=%lld\n", llsc_single, llsc_multi);
         gdb_exit(env, code);
 }

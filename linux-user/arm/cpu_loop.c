@@ -249,6 +249,9 @@ static int do_ldrex(CPUARMState *env)
 extern int x_monitor_check_exclusive(void* p_node, uint32_t addr);
 extern int x_monitor_check_and_clean(int tid, uint32_t addr);
 #endif
+
+double exclusive_time = 0.0;
+pthread_mutex_t exclusive_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Store exclusive handling for AArch32 */
 static int do_strex(CPUARMState *env)
 {
@@ -262,6 +265,11 @@ static int do_strex(CPUARMState *env)
 	uint32_t hash_entry;
 #endif
     //fprintf(stderr, "[do_strex]\tdo_strex\n");
+    
+    //should we time before start_exclusive or after start_exclusive
+    pthread_mutex_lock(&exclusive_mutex);
+    struct timeval tbegin, tend;
+    gettimeofday(&tbegin, NULL);
     start_exclusive();
 
     if (env->exclusive_addr != env->exclusive_test) {
@@ -374,6 +382,12 @@ fail:
 	
 done:
     end_exclusive();
+    gettimeofday(&tend, NULL);
+    double this_time = (tend.tv_sec - tbegin.tv_sec) * 1000000 + (double)(tend.tv_usec - tbegin.tv_usec);
+    assert(tend.tv_sec - tbegin.tv_sec >= 0);
+    assert(this_time >= 0);
+    exclusive_time += this_time;
+    pthread_mutex_unlock(&exclusive_mutex);
     return segv;
 }
 

@@ -1030,10 +1030,21 @@ void HELPER(print_aa32_addr)(uint32_t addr)
 
 extern int x_monitor_set_exclusive_addr(void* p_node, uint32_t addr);
 extern int target_mprotect(abi_ulong, abi_ulong, int);
+
+int mprotect_count = 0;
+double mprotect_time = 0;
+pthread_mutex_t llsc_mutex = PTHREAD_MUTEX_INITIALIZER;
 void HELPER(pf_llsc_add)(uint32_t addr, uint64_t node_addr)
 {
 	target_ulong page_addr = addr & 0xfffff000;
     //fprintf(stderr, "[pf_llsc_add]\taddr = %x, node_addr = %lx\n", page_addr, node_addr);
+    struct timeval tbegin, tend;
+    gettimeofday(&tbegin, NULL);
 	x_monitor_set_exclusive_addr((void*)node_addr, addr);
 	target_mprotect(page_addr, 0x1000, PROT_READ);
+    gettimeofday(&tend, NULL);
+    pthread_mutex_lock(&llsc_mutex);
+    mprotect_time += (tend.tv_sec - tbegin.tv_sec) * 1000000 + (tend.tv_usec - tbegin.tv_usec);
+    mprotect_count++;
+    pthread_mutex_unlock(&llsc_mutex);
 }
