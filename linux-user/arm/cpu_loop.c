@@ -207,41 +207,8 @@ do_kernel_trap(CPUARMState *env)
     return 0;
 }
 
-/* Load exclusive handling for AArch32 */
-static int do_ldrex(CPUARMState *env)
-{
-    uint64_t val;
-    int segv = 0;
-    uint32_t addr;
-#ifdef HASH_LLSC
-	uint32_t hash_addr;
-#endif
-    //fprintf(stderr, "do_ldrex\n");
-    start_exclusive();
-
-    addr = env->exclusive_addr;
-
-    segv = get_user_u32(val, addr);
-	//assert(segv == 0);
-	env->exclusive_val = val;
-
-#ifdef HASH_LLSC
-	hash_addr = (addr & 0x0fffffff) | 0xa0000000;
-    segv = put_user_u32(env->exclusive_tid, hash_addr);
-	//assert(segv == 0);
-#endif
-	
-    env->regs[15] += 4;
-    env->regs[(env->exclusive_info) & 0xf] = val;
-	//fprintf(stderr, "ldrex reg = %d, reg15 = %d, val = %ld!, addr = %x\n",
-	//		(env->exclusive_info) & 0xf , env->regs[15], val, addr);
-
-#ifdef LLSC_LOG
-	fprintf(stderr, "thread %d ldrex done! val %lx, addr %x\n", env->exclusive_tid, env->exclusive_val, addr);
-#endif
-    end_exclusive();
-    return segv;
-}
+double exclusive_time = 0.0;
+pthread_mutex_t exclusive_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Store exclusive handling for AArch32 */
 static int do_strex(CPUARMState *env)
@@ -256,6 +223,11 @@ static int do_strex(CPUARMState *env)
 	uint32_t hash_entry;
 #endif
     //fprintf(stderr, "[do_strex]\tdo_strex\n");
+
+    //should we time before start_exclusive or after start_exclusive
+    pthread_mutex_lock(&exclusive_mutex);
+    struct timeval tbegin, tend;
+    gettimeofday(&tbegin, NULL);
     start_exclusive();
     if (env->exclusive_addr != env->exclusive_test) {
 #ifdef LLSC_LOG
@@ -353,6 +325,12 @@ fail:
 	
 done:
     end_exclusive();
+    gettimeofday(&tend, NULL);
+    double this_time = (tend.tv_sec - tbegin.tv_sec) * 1000000 + (double)(tend.tv_usec - tbegin.tv_usec);
+    assert(tend.tv_sec - tbegin.tv_sec >= 0);
+    assert(this_time >= 0);
+    exclusive_time += this_time;
+    pthread_mutex_unlock(&exclusive_mutex);
     return segv;
 }
 
@@ -564,14 +542,6 @@ void cpu_loop(CPUARMState *env)
         case EXCP_ATOMIC:
             cpu_exec_step_atomic(cs);
             break;
-		case EXCP_LDREX:
-			if (!do_ldrex(env)) {
-				break;
-			}
-			else {
-				EXCP_DUMP(env, "qemu: unhandled CPU exception 0x%x - aborting\n", trapnr);
-            	abort();
-			}
 		case EXCP_STREX:
             if (!do_strex(env)) {
                 break;

@@ -7545,7 +7545,7 @@ static void gen_clrex(DisasContext *s)
     tcg_gen_movi_i64(cpu_exclusive_addr, -1);
 }
 
-#ifdef QEMU_LLSC
+/*#ifdef QEMU_LLSC
 static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
                                 TCGv_i32 addr, int size)
 {
@@ -7554,7 +7554,7 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
                      size | (rd << 4) | (rt << 8) | (rt2 << 12));
     gen_exception_internal_insn(s, 4, EXCP_STREX);
 }
-#else
+#else*/
 static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
                                 TCGv_i32 addr, int size)
 {
@@ -7630,7 +7630,7 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     gen_set_label(done_label);
     tcg_gen_movi_i64(cpu_exclusive_addr, -1);
 }
-#endif
+//#endif
 
 /* gen_srs:
  * @env: CPUARMState
