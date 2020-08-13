@@ -1041,7 +1041,7 @@ void HELPER(pf_llsc_add)(uint32_t addr, uint64_t node_addr)
     struct timeval tbegin, tend;
     gettimeofday(&tbegin, NULL);
 	x_monitor_set_exclusive_addr((void*)node_addr, addr);
-	target_mprotect(page_addr, 0x1000, PROT_READ);
+	target_mprotect(page_addr, 0x1000, PROT_READ | PROT_WRITE);
     gettimeofday(&tend, NULL);
     pthread_mutex_lock(&llsc_mutex);
     mprotect_time += (tend.tv_sec - tbegin.tv_sec) * 1000000 + (tend.tv_usec - tbegin.tv_usec);
