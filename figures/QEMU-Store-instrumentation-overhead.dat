@@ -1,0 +1,10 @@
+# PARSEC-blackscholes-simlage-1 thread Pico-ST branch 
+condition	ovehread
+native	0
+Empty-helper	0.032086790044671
+Helper-reading-user-memory-safe	0.187250825223989
+Helper-reading-user-memory-unsafe	0.0280924796227
+Helper-writing-user-memory-safe	0.197196815718157
+Pico-st-fast	0.201591847047924
+Pico-st-slow	0.449530363079425
+IR-writing-user-mem(HST)	0.023964580812891
