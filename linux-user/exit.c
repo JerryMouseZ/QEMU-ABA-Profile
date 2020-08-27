@@ -26,6 +26,7 @@
 extern void __gcov_dump(void);
 #endif
 
+extern double exclusive_time;
 void preexit_cleanup(CPUArchState *env, int code)
 {
 #ifdef TARGET_GPROF
@@ -34,5 +35,6 @@ void preexit_cleanup(CPUArchState *env, int code)
 #ifdef CONFIG_GCOV
         __gcov_dump();
 #endif
+        fprintf(stderr, "exclusive_time:%lfs\n", exclusive_time / 1000000);
         gdb_exit(env, code);
 }
