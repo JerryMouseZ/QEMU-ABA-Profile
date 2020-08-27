@@ -7169,7 +7169,7 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
 {
     TCGv_i32 tmp = tcg_temp_new_i32();
     MemOp opc = size | MO_ALIGN | s->be_data;
-
+    gen_helper_ll_count();
     s->is_ldex = true;
 
     if (size == 3) {
@@ -7223,7 +7223,7 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     TCGLabel *done_label;
     TCGLabel *fail_label;
     MemOp opc = size | MO_ALIGN | s->be_data;
-
+    gen_helper_sc_count();
     /* if (env->exclusive_addr == addr && env->exclusive_val == [addr]) {
          [addr] = {Rt};
          {Rd} = 0;

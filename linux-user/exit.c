@@ -26,6 +26,7 @@
 extern void __gcov_dump(void);
 #endif
 
+extern int instructions_count, ldrex_count, strex_count;
 void preexit_cleanup(CPUArchState *env, int code)
 {
 #ifdef TARGET_GPROF
@@ -34,6 +35,9 @@ void preexit_cleanup(CPUArchState *env, int code)
 #ifdef CONFIG_GCOV
         __gcov_dump();
 #endif
+        fprintf(stderr, "instructions : %d\n", instructions_count);
+        fprintf(stderr, "ldrex count : %d\n", ldrex_count);
+        fprintf(stderr, "strex count : %d\n", strex_count);
         gdb_exit(env, code);
         qemu_plugin_atexit_cb();
 }

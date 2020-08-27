@@ -991,3 +991,15 @@ void HELPER(dc_zva)(CPUARMState *env, uint64_t vaddr_in)
     memset(g2h(vaddr), 0, blocklen);
 #endif
 }
+
+int ldrex_count = 0;
+int strex_count = 0;
+void HELPER(ll_count)(void)
+{
+    __sync_fetch_and_add(&ldrex_count, 1);
+}
+
+void HELPER(sc_count)(void)
+{
+    __sync_fetch_and_add(&strex_count, 1);
+}
