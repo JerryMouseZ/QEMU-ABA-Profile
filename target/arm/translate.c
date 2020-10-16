@@ -37,11 +37,11 @@
 #include "trace-tcg.h"
 #include "exec/log.h"
 
-#define HASH_LLSC
+// #define HASH_LLSC
 //#define PF_LLSC
 //#define PICO_ST_LLSC
 #define QEMU_LLSC			/* gen EXCEPTION on STREX */
-//#define ATOMIC_LDREX		/* gen EXCEPTION on LDREX */
+#define ATOMIC_LDREX		/* gen EXCEPTION on LDREX */
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)

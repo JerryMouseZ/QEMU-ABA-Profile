@@ -71,7 +71,7 @@
         put_user_u16(__x, (gaddr));                     \
     })
 
-#define HASH_LLSC
+// #define HASH_LLSC
 //#define LLSC_LOG
 /* Commpage handling -- there is no commpage for AArch64 */
 
@@ -225,11 +225,11 @@ static int do_ldrex(CPUARMState *env)
 	//assert(segv == 0);
 	env->exclusive_val = val;
 
-#ifdef HASH_LLSC
-	hash_addr = (addr & 0x0fffffff) | 0xa0000000;
-    segv = put_user_u32(env->exclusive_tid, hash_addr);
-	//assert(segv == 0);
-#endif
+// #ifdef HASH_LLSC
+// 	hash_addr = (addr & 0x0fffffff) | 0xa0000000;
+//     segv = put_user_u32(env->exclusive_tid, hash_addr);
+// 	//assert(segv == 0);
+// #endif
 	
     env->regs[15] += 4;
     env->regs[(env->exclusive_info) & 0xf] = val;
@@ -239,7 +239,7 @@ static int do_ldrex(CPUARMState *env)
 #ifdef LLSC_LOG
 	fprintf(stderr, "thread %d ldrex done! val %lx, addr %x\n", env->exclusive_tid, env->exclusive_val, addr);
 #endif
-    end_exclusive();
+    // end_exclusive();
     return segv;
 }
 
@@ -256,7 +256,7 @@ static int do_strex(CPUARMState *env)
 	uint32_t hash_entry;
 #endif
     //fprintf(stderr, "[do_strex]\tdo_strex\n");
-    start_exclusive();
+    // start_exclusive();
     if (env->exclusive_addr != env->exclusive_test) {
 #ifdef LLSC_LOG
 		fprintf(stderr, "thread %d strex fail! val %lx, oldval %lx, addr %x\n", env->exclusive_tid, val, env->exclusive_val, addr);
@@ -269,19 +269,19 @@ static int do_strex(CPUARMState *env)
      */
     assert(extract64(env->exclusive_addr, 32, 32) == 0);
     addr = env->exclusive_addr;
-#ifdef HASH_LLSC
-	hash_addr = (addr & 0x0fffffff) | 0xa0000000;
-	segv = get_user_u32(hash_entry, hash_addr);
-	assert(segv == 0);
-	if (hash_entry != env->exclusive_tid) {
+// #ifdef HASH_LLSC
+// 	hash_addr = (addr & 0x0fffffff) | 0xa0000000;
+// 	segv = get_user_u32(hash_entry, hash_addr);
+// 	assert(segv == 0);
+// 	if (hash_entry != env->exclusive_tid) {
 
-#ifdef LLSC_LOG
-		fprintf(stderr, "thread %d strex fail! val %lx, oldval %lx, hash_entry %x, addr %x\n", env->exclusive_tid, val, env->exclusive_val, hash_entry, addr);
-#endif
-        goto fail;
-    }
+// #ifdef LLSC_LOG
+// 		fprintf(stderr, "thread %d strex fail! val %lx, oldval %lx, hash_entry %x, addr %x\n", env->exclusive_tid, val, env->exclusive_val, hash_entry, addr);
+// #endif
+//         goto fail;
+//     }
 
-#endif
+// #endif
 	
     size = env->exclusive_info & 0xf;
     switch (size) {
